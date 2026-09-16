@@ -18,3 +18,13 @@ directory = "build/web"
 # go_router owns the URL. A reload on /inventory, or a pasted deep link, must
 # return index.html rather than a 404.
 not_found_handling = "single-page-application"
+
+# `wrangler deploy` runs this first, before it reads the assets directory above.
+#
+# That is what makes the deploy self-contained: Cloudflare's Git integration
+# runs `npx wrangler deploy` with no build step of its own, and its image has no
+# Flutter SDK, so without this there is never a build/web to upload. Keeping the
+# build here rather than in a dashboard field also means the deploy behaves the
+# same from CI, from the dashboard and from a laptop.
+[build]
+command = "bash scripts/cloudflare-build.sh"

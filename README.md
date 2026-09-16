@@ -79,56 +79,58 @@ The web build is a static bundle in `build/web` — serve it with any web server
 
 ## Deploying to Cloudflare
 
-The web build is deployed as a **Cloudflare Worker serving static assets**
-(`wrangler.toml`), published by the GitHub Actions workflow at
-`.github/workflows/deploy-cloudflare-workers.yml` on every push to `main`.
+The site is a **Cloudflare Worker serving static assets**. Everything the deploy
+needs lives in `wrangler.toml`, so `wrangler deploy` is self-contained — it works
+the same from Cloudflare's Git integration, from GitHub Actions, or from a
+laptop, with no build step configured anywhere else:
 
-> **The build must run in GitHub Actions, not on Cloudflare.** Cloudflare's build
-> image has no Flutter SDK, so a dashboard-connected Git build cannot produce
-> `build/web`. It publishes the unbuilt `web/` source instead — an `index.html`
-> still holding the literal `$FLUTTER_BASE_HREF` placeholder, with no
-> `main.dart.js` and no assets. The site loads as a blank white page.
+```toml
+[assets]
+directory = "build/web"              # the build OUTPUT, never the web/ source
+not_found_handling = "single-page-application"
+
+[build]
+command = "bash scripts/cloudflare-build.sh"
+```
+
+Wrangler runs `[build].command` *before* it reads the assets directory, which is
+what makes this work. Cloudflare's build image has no Flutter SDK, so the script
+installs one when it has to, then builds.
+
+> **Why this is wired so defensively.** Cloudflare's Git integration clones the
+> repository and runs `npx wrangler deploy` with no build step of its own. Before
+> `[build]` existed here, that published the unbuilt `web/` source directory: an
+> `index.html` still holding the literal `$FLUTTER_BASE_HREF` placeholder, no
+> `main.dart.js`, no assets. The site rendered as a blank white page and nothing
+> in the deploy log said anything was wrong.
 >
-> If the Worker is currently connected to this repository through the Cloudflare
-> dashboard, **disconnect that Git integration**, or it will keep overwriting
-> each good deployment with the source tree.
+> `scripts/cloudflare-build.sh` therefore refuses to finish unless
+> `main.dart.js` exists and the base-href placeholder has been substituted, so
+> that failure cannot recur silently.
 
-Setup:
+Nothing needs configuring in the Cloudflare dashboard. If a build command is set
+there, it runs in addition to this one; leaving it empty is fine and preferred.
 
-1. Create a Cloudflare API token with permission to edit Workers, and add it to
-   the repository as the `CLOUDFLARE_API_TOKEN` secret.
-2. Add the Cloudflare account ID as the `CLOUDFLARE_ACCOUNT_ID` secret.
-3. Optionally set an `API_BASE_URL` repository *variable* to override the
-   default backend URL compiled into the bundle.
-4. Push to `main`, or run the workflow manually.
+### Deploying from GitHub Actions instead
 
-The worker name (`tool-management-cnh`) and the asset directory (`build/web`)
-live in `wrangler.toml`. The workflow refuses to publish a bundle that is missing
-`main.dart.js` or still contains the base-href placeholder, so the blank-page
-failure cannot reach production again silently.
+`.github/workflows/deploy-cloudflare-workers.yml` does the same thing on every
+push to `main`, with the SDK cached — about three minutes, against five to eight
+for a Cloudflare build that re-downloads it each time. It needs a Cloudflare API
+token with Workers edit permission as the `CLOUDFLARE_API_TOKEN` secret and the
+account ID as `CLOUDFLARE_ACCOUNT_ID`; set an `API_BASE_URL` repository variable
+to override the backend URL compiled into the bundle.
+
+The script detects a bundle already built by the workflow and reuses it rather
+than compiling twice.
+
+Run one route or the other. If both the dashboard integration and the workflow
+are active they will race to publish the same Worker — disconnect the dashboard's
+Git integration before relying on Actions.
 
 Cache rules are in `web/_headers`, copied into the bundle by the build:
 `index.html`, the service worker and `version.json` are never stored, because
 each one names the versioned assets and a cached copy pins the browser to the
 previous build. Hashed assets are cached for a year.
-
-### Building on Cloudflare instead
-
-If you would rather keep the Cloudflare dashboard's Git integration than move to
-Actions, point its **build command** at the bundled script, which installs the
-Flutter SDK into the build container first:
-
-```
-Build command:   bash scripts/cloudflare-build.sh
-Deploy command:  npx wrangler deploy
-```
-
-Without a build command, Cloudflare clones the repository and runs
-`wrangler deploy` straight away; `build/web` does not exist and the deploy fails.
-This is the slower of the two routes — the SDK is re-downloaded on every build —
-so prefer Actions unless adding the two repository secrets is awkward.
-
-Run one or the other, not both, or the two will race to publish the same Worker.
 
 The backend must allow the Worker's origin through CORS. Because `API_BASE_URL`
 is compiled into the web bundle, changing it requires another deployment.
