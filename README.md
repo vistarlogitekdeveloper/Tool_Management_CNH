@@ -55,6 +55,20 @@ flutter build windows --release --dart-define=API_BASE_URL=https://your-api/api/
 
 The web build is a static bundle in `build/web` — serve it with any web server.
 
+## Deploying to Cloudflare Pages
+
+This repository includes a GitHub Actions workflow at `.github/workflows/deploy-cloudflare-pages.yml`.
+It builds the Flutter web release and deploys `build/web` to Cloudflare Pages whenever `main` changes.
+
+1. Create a Cloudflare Pages project. Keep the project name for the `CLOUDFLARE_PAGES_PROJECT` variable.
+2. Create a Cloudflare API token with permission to edit Pages projects, then add it to the repository as the `CLOUDFLARE_API_TOKEN` secret.
+3. Add the Cloudflare account ID as the `CLOUDFLARE_ACCOUNT_ID` repository secret.
+4. Add `CLOUDFLARE_PAGES_PROJECT` as a repository variable with the Pages project name.
+5. Add `API_BASE_URL` as a repository variable with the deployed backend URL, for example `https://api.example.com/api/v1`.
+6. Push to `main`, or run the `Deploy Flutter web to Cloudflare Pages` workflow manually.
+
+The backend must allow requests from the Cloudflare Pages domain through CORS. Because `API_BASE_URL` is compiled into the web bundle, changing it requires another deployment.
+
 ## Tests
 
 ```bash
