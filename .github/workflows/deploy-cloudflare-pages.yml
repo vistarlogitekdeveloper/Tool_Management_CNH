@@ -27,7 +27,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web release
-        run: flutter build web --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+        run: flutter build web --release --dart-define=API_BASE_URL=https://tool-management-cnh.flutter-developer.workers.dev
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
