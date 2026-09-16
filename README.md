@@ -45,6 +45,28 @@ flutter run -d windows    --dart-define=API_BASE_URL=http://localhost:4000/api/v
 flutter run -d android    --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1   # emulator host
 ```
 
+## Demo sign-ins
+
+Seeding the backend (`npm run seed`) creates one account per role profile. The
+password for all four is `Tms@2026`, taken from the backend's `SEED_PASSWORD`
+environment variable — set that before seeding to use a different one.
+
+| Username | Password | Role | Sees |
+|---|---|---|---|
+| `rahul.k` | `Tms@2026` | Administrator | All nine modules, plus Administration |
+| `sunil.k` | `Tms@2026` | Store Keeper | Tool Master, Inventory, Issue & Return, Tracking, Purchase |
+| `sneha.p` | `Tms@2026` | Quality Engineer | Calibration, Repair & Scrap, Reports |
+| `prakash.r` | `Tms@2026` | Operator | Issue & Return, Tracking |
+
+The role decides which modules appear and which actions are permitted; signing in
+as each is the quickest way to see the permission model working.
+
+> **These are demo accounts, and this README is public.** They exist only where
+> the seeder has been run. Change the password, or disable the accounts, on any
+> deployment reachable from the internet — `rahul.k` holds every permission in
+> the system. Administration → Users can reset a password or deactivate a user,
+> and an administrator reset forces a change at next sign-in.
+
 ## Building
 
 ```bash

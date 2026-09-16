@@ -12,7 +12,7 @@ abstract final class AppConfig {
   static const vendor = 'Vistarlogitek';
   static const appVersion = '1.0.0';
 
-  static const _defaultBaseUrl = 'https://tool-management-cnh.flutter-developer.workers.dev';
+  static const _defaultBaseUrl = 'https://uat-api.vistarlogitek.com/api/v1/tool-management';
 
   static const apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: _defaultBaseUrl);
 
