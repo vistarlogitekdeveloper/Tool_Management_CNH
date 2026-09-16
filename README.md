@@ -129,8 +129,14 @@ Git integration before relying on Actions.
 
 Cache rules are in `web/_headers`, copied into the bundle by the build:
 `index.html`, the service worker and `version.json` are never stored, because
-each one names the versioned assets and a cached copy pins the browser to the
-previous build. Hashed assets are cached for a year.
+each one names the rest of the app and a cached copy survives a deploy.
+
+There are deliberately **no `immutable` rules**. Flutter web does not
+content-hash its output — `main.dart.js`, `assets/FontManifest.json` and
+`canvaskit/canvaskit.wasm` keep the same names across builds — so a long
+`max-age` would pin returning visitors to the previous build's assets until it
+expired. Cloudflare's `max-age=0, must-revalidate` default is correct for those:
+the browser revalidates and takes a 304 when nothing changed.
 
 The backend must allow the Worker's origin through CORS. Because `API_BASE_URL`
 is compiled into the web bundle, changing it requires another deployment.

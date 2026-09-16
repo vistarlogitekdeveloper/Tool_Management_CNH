@@ -1,22 +1,28 @@
-# Cloudflare Workers Static Assets header rules.
+# Cloudflare Static Assets header rules. Copied verbatim into build/web by
+# `flutter build web`, and consumed as configuration rather than served.
 #
-# index.html, the service worker and version.json all *name* the versioned
-# assets. A cached copy of any of them pins the browser to the previous build,
-# so a deploy appears to do nothing. Everything else is content-addressed and
-# safe to cache hard.
+# Deliberately NO `immutable` rules. That is the obvious optimisation here and
+# it is wrong: Flutter web does not content-hash its output. Every filename is
+# stable across builds — assets/FontManifest.json, assets/fonts/*.otf,
+# canvaskit/canvaskit.wasm, even main.dart.js — so a long immutable max-age
+# pins returning visitors to the previous build's assets until it expires.
+# Cloudflare's default (`max-age=0, must-revalidate`) is already correct for
+# those: the browser revalidates and gets a 304 when nothing changed.
+#
+# What is worth overriding is the entry points, which name everything else. A
+# cached copy of any of them survives a deploy and keeps loading the old app.
+
+/*
+  X-Content-Type-Options: nosniff
+
+/
+  Cache-Control: no-store, must-revalidate
 
 /index.html
   Cache-Control: no-store, must-revalidate
-  X-Content-Type-Options: nosniff
 
 /flutter_service_worker.js
   Cache-Control: no-store, must-revalidate
 
 /version.json
   Cache-Control: no-store, must-revalidate
-
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
-/canvaskit/*
-  Cache-Control: public, max-age=31536000, immutable
