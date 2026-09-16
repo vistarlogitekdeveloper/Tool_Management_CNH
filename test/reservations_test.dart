@@ -41,7 +41,7 @@ void main() {
     });
 
     return IssuesRepository(
-      ApiClient(storage: storage, dio: dio, baseUrl: 'http://api.test/api/v1'),
+      ApiClient(storage: storage, dio: dio, baseUrl: 'https://uat-api.vistarlogitek.com/api/v1'),
     );
   }
 
