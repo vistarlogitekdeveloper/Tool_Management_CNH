@@ -112,6 +112,24 @@ Cache rules are in `web/_headers`, copied into the bundle by the build:
 each one names the versioned assets and a cached copy pins the browser to the
 previous build. Hashed assets are cached for a year.
 
+### Building on Cloudflare instead
+
+If you would rather keep the Cloudflare dashboard's Git integration than move to
+Actions, point its **build command** at the bundled script, which installs the
+Flutter SDK into the build container first:
+
+```
+Build command:   bash scripts/cloudflare-build.sh
+Deploy command:  npx wrangler deploy
+```
+
+Without a build command, Cloudflare clones the repository and runs
+`wrangler deploy` straight away; `build/web` does not exist and the deploy fails.
+This is the slower of the two routes — the SDK is re-downloaded on every build —
+so prefer Actions unless adding the two repository secrets is awkward.
+
+Run one or the other, not both, or the two will race to publish the same Worker.
+
 The backend must allow the Worker's origin through CORS. Because `API_BASE_URL`
 is compiled into the web bundle, changing it requires another deployment.
 

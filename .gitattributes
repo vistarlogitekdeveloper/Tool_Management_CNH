@@ -1,0 +1,11 @@
+# Normalise text in the repository, and check it out as the platform expects.
+* text=auto
+
+# These are consumed by Linux build runners. A CRLF shebang fails with
+# "bad interpreter: /usr/bin/env bash^M", and Cloudflare's _headers parser
+# wants LF too, so pin them regardless of the checkout platform.
+*.sh            text eol=lf
+_headers        text eol=lf
+_redirects      text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
