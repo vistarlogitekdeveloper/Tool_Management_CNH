@@ -1,0 +1,22 @@
+# Cloudflare Workers Static Assets header rules.
+#
+# index.html, the service worker and version.json all *name* the versioned
+# assets. A cached copy of any of them pins the browser to the previous build,
+# so a deploy appears to do nothing. Everything else is content-addressed and
+# safe to cache hard.
+
+/index.html
+  Cache-Control: no-store, must-revalidate
+  X-Content-Type-Options: nosniff
+
+/flutter_service_worker.js
+  Cache-Control: no-store, must-revalidate
+
+/version.json
+  Cache-Control: no-store, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/canvaskit/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,55 @@
+name: Deploy Flutter web to Cloudflare Workers
+
+# The build must happen here, not on Cloudflare. Cloudflare's build image has no
+# Flutter SDK, so a dashboard-connected build publishes the unbuilt web/ source
+# directory — an index.html holding a literal $FLUTTER_BASE_HREF and no assets,
+# which renders as a blank page.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web release
+        run: |
+          flutter build web --release \
+            --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://uat-api.vistarlogitek.com/api/v1/tool-management' }}
+
+      - name: Fail if the build did not produce a real bundle
+        # Cheap guard against publishing the source template again: a built
+        # index.html has the placeholder substituted, and main.dart.js exists.
+        run: |
+          test -f build/web/main.dart.js || { echo "::error::main.dart.js missing — flutter build web did not run"; exit 1; }
+          if grep -q 'FLUTTER_BASE_HREF' build/web/index.html; then
+            echo "::error::build/web/index.html still holds the \$FLUTTER_BASE_HREF placeholder"
+            exit 1
+          fi
+          echo "bundle OK: $(du -sh build/web | cut -f1), $(find build/web -type f | wc -l) files"
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

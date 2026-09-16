@@ -1,0 +1,20 @@
+# Cloudflare Workers Static Assets — serves the built Flutter web bundle.
+#
+# The critical line is `directory`. It must point at build/web (the *output* of
+# `flutter build web`), never at web/ (the source template), whose index.html
+# still contains the literal `$FLUTTER_BASE_HREF` placeholder and none of the
+# compiled assets.
+#
+# Cloudflare's build image has no Flutter SDK, so the build cannot run there.
+# It runs in GitHub Actions, which then calls `wrangler deploy` — see
+# .github/workflows/deploy-cloudflare-workers.yml.
+
+name = "tool-management-cnh"
+compatibility_date = "2026-09-16"
+
+[assets]
+directory = "build/web"
+
+# go_router owns the URL. A reload on /inventory, or a pasted deep link, must
+# return index.html rather than a 404.
+not_found_handling = "single-page-application"

@@ -77,19 +77,43 @@ flutter build windows --release --dart-define=API_BASE_URL=https://your-api/api/
 
 The web build is a static bundle in `build/web` — serve it with any web server.
 
-## Deploying to Cloudflare Pages
+## Deploying to Cloudflare
 
-This repository includes a GitHub Actions workflow at `.github/workflows/deploy-cloudflare-pages.yml`.
-It builds the Flutter web release and deploys `build/web` to Cloudflare Pages whenever `main` changes.
+The web build is deployed as a **Cloudflare Worker serving static assets**
+(`wrangler.toml`), published by the GitHub Actions workflow at
+`.github/workflows/deploy-cloudflare-workers.yml` on every push to `main`.
 
-1. Create a Cloudflare Pages project. Keep the project name for the `CLOUDFLARE_PAGES_PROJECT` variable.
-2. Create a Cloudflare API token with permission to edit Pages projects, then add it to the repository as the `CLOUDFLARE_API_TOKEN` secret.
-3. Add the Cloudflare account ID as the `CLOUDFLARE_ACCOUNT_ID` repository secret.
-4. Add `CLOUDFLARE_PAGES_PROJECT` as a repository variable with the Pages project name.
-5. Add `API_BASE_URL` as a repository variable with the deployed backend URL, for example `https://api.example.com/api/v1`.
-6. Push to `main`, or run the `Deploy Flutter web to Cloudflare Pages` workflow manually.
+> **The build must run in GitHub Actions, not on Cloudflare.** Cloudflare's build
+> image has no Flutter SDK, so a dashboard-connected Git build cannot produce
+> `build/web`. It publishes the unbuilt `web/` source instead — an `index.html`
+> still holding the literal `$FLUTTER_BASE_HREF` placeholder, with no
+> `main.dart.js` and no assets. The site loads as a blank white page.
+>
+> If the Worker is currently connected to this repository through the Cloudflare
+> dashboard, **disconnect that Git integration**, or it will keep overwriting
+> each good deployment with the source tree.
 
-The backend must allow requests from the Cloudflare Pages domain through CORS. Because `API_BASE_URL` is compiled into the web bundle, changing it requires another deployment.
+Setup:
+
+1. Create a Cloudflare API token with permission to edit Workers, and add it to
+   the repository as the `CLOUDFLARE_API_TOKEN` secret.
+2. Add the Cloudflare account ID as the `CLOUDFLARE_ACCOUNT_ID` secret.
+3. Optionally set an `API_BASE_URL` repository *variable* to override the
+   default backend URL compiled into the bundle.
+4. Push to `main`, or run the workflow manually.
+
+The worker name (`tool-management-cnh`) and the asset directory (`build/web`)
+live in `wrangler.toml`. The workflow refuses to publish a bundle that is missing
+`main.dart.js` or still contains the base-href placeholder, so the blank-page
+failure cannot reach production again silently.
+
+Cache rules are in `web/_headers`, copied into the bundle by the build:
+`index.html`, the service worker and `version.json` are never stored, because
+each one names the versioned assets and a cached copy pins the browser to the
+previous build. Hashed assets are cached for a year.
+
+The backend must allow the Worker's origin through CORS. Because `API_BASE_URL`
+is compiled into the web bundle, changing it requires another deployment.
 
 ## Tests
 
