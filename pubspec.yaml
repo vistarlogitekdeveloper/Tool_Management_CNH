@@ -1,0 +1,54 @@
+name: cnh_tms
+description: "CNH Pune Plant — Tool Management System. Flutter client for web, Android, iOS and Windows."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Routing with role-aware guards
+  go_router: ^14.2.7
+
+  # Networking
+  dio: ^5.7.0
+
+  # User preferences and the cached profile (not credentials)
+  shared_preferences: ^2.3.2
+
+  # The session token pair — Keychain / Android Keystore / DPAPI / libsecret
+  flutter_secure_storage: ^10.3.1
+
+  # Formatting (dates, currency, numbers) — the plant runs en_IN
+  intl: ^0.19.0
+
+  # File download / open for Excel and PDF exports
+  path_provider: ^2.1.4
+  open_filex: ^4.5.0
+  file_picker: ^8.1.2
+
+  # Small platform helpers
+  url_launcher: ^6.3.0
+  cupertino_icons: ^1.0.8
+
+  # Used directly by the web download path (core/utils/downloader_web.dart)
+  web: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  # Only for test/token_storage_test.dart, which substitutes a failing platform
+  # to prove an unreachable keystore never falls back to plaintext.
+  flutter_secure_storage_platform_interface: ^2.0.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
