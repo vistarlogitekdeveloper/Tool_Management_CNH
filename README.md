@@ -58,6 +58,8 @@ whoever provisioned the environment, for the credentials.
 | `sneha.p` | Quality Engineer | Calibration, Repair & Scrap, Reports |
 | `prakash.r` | Operator | Issue & Return, Tracking |
 
+Password:-1234567890q
+
 The role decides which modules appear and which actions are permitted; signing in
 as each is the quickest way to see the permission model working.
 
