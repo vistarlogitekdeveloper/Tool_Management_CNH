@@ -32,9 +32,19 @@ jobs:
         run: flutter pub get
 
       - name: Build web release
+        # Usage analytics only when BOTH the repository variable ET_APP_ID and
+        # the secret ET_WRITE_KEY are set (lib/core/telemetry/telemetry.dart).
+        env:
+          ET_APP_ID: ${{ vars.ET_APP_ID }}
+          ET_WRITE_KEY: ${{ secrets.ET_WRITE_KEY }}
         run: |
+          ET_DEFINES=()
+          if [ -n "${ET_APP_ID}" ] && [ -n "${ET_WRITE_KEY}" ]; then
+            ET_DEFINES=(--dart-define=ET_APP_ID="${ET_APP_ID}" --dart-define=ET_WRITE_KEY="${ET_WRITE_KEY}")
+          fi
           flutter build web --release \
-            --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://uat-api.vistarlogitek.com/api/v1/tool-management' }}
+            --dart-define=API_BASE_URL=${{ vars.API_BASE_URL || 'https://uat-api.vistarlogitek.com/api/v1/tool-management' }} \
+            "${ET_DEFINES[@]}"
 
       - name: Fail if the build did not produce a real bundle
         # Cheap guard against publishing the source template again: a built

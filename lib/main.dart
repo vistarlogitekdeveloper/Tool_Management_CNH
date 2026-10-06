@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app.dart';
 import 'core/providers.dart';
 import 'core/storage/token_storage.dart';
+import 'core/telemetry/telemetry.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,11 @@ Future<void> main() async {
   // Storage is resolved before the first frame so the router can decide between
   // the login screen and the shell without a flash.
   final storage = await TokenStorage.create();
+
+  // Usage analytics: off unless the build carries ET_APP_ID + ET_WRITE_KEY
+  // (core/telemetry/telemetry.dart); then waits at most 2 s, never throws.
+  // Off, nothing runs here, exactly as before.
+  if (Telemetry.enabled) await Telemetry.init();
 
   runApp(
     ProviderScope(

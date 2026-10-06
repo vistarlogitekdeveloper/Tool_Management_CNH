@@ -42,7 +42,26 @@ fi
 
 flutter --version
 flutter pub get
-flutter build web --release --dart-define=API_BASE_URL="${API_BASE_URL}"
+
+DART_DEFINES=(--dart-define=API_BASE_URL="${API_BASE_URL}")
+
+# Usage analytics (lib/core/telemetry/telemetry.dart). On only when BOTH build
+# variables are set (Workers > tool-management-cnh > Settings > Build >
+# Variables and secrets): ET_APP_ID (tms_app) and ET_WRITE_KEY (as a secret).
+# Either missing: no define is passed and the app sends nothing, exactly as
+# before. ET_BASE_URL is optional (events go to the API host by default).
+# Never echo the key.
+if [ -n "${ET_APP_ID:-}" ] && [ -n "${ET_WRITE_KEY:-}" ]; then
+  DART_DEFINES+=(--dart-define=ET_APP_ID="${ET_APP_ID}" --dart-define=ET_WRITE_KEY="${ET_WRITE_KEY}")
+  if [ -n "${ET_BASE_URL:-}" ]; then
+    DART_DEFINES+=(--dart-define=ET_BASE_URL="${ET_BASE_URL}")
+  fi
+  echo "==> Usage analytics on, as ${ET_APP_ID}"
+else
+  echo "==> Usage analytics off (ET_APP_ID / ET_WRITE_KEY not set)"
+fi
+
+flutter build web --release "${DART_DEFINES[@]}"
 
 # Never let the unbuilt source template reach the CDN again: that is the exact
 # failure this whole path exists to prevent, and it is silent from the outside —

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
+import '../../../core/telemetry/telemetry.dart';
 import '../../../models/enums.dart';
 import '../../../models/user.dart';
 
@@ -55,6 +56,8 @@ class AuthController extends StateNotifier<AuthState> {
   void _listenForExpiry() {
     _ref.read(apiClientProvider).onSessionExpired.listen((_) {
       if (!mounted) return;
+      // An expired session is a sign-out too (not awaited).
+      if (state.isAuthenticated) Telemetry.signedOut();
       state = const AuthState(
         status: AuthStatus.unauthenticated,
         error: 'Your session expired. Please sign in again.',
@@ -73,15 +76,19 @@ class AuthController extends StateNotifier<AuthState> {
 
     final cached = repo.cachedUser;
     if (cached != null) {
+      // Before the state change, so the screen it leads to is already theirs.
+      _identify(cached);
       state = AuthState(status: AuthStatus.authenticated, user: cached);
     }
 
     try {
       final fresh = await repo.me();
+      _identify(fresh); // dropped if it is who the cache said
       state = AuthState(status: AuthStatus.authenticated, user: fresh);
     } on ApiException catch (e) {
       // A network blip should not sign out a user who has a cached profile.
       if (e.isUnauthorized || e.isForbidden) {
+        if (state.isAuthenticated) Telemetry.signedOut(); // not awaited
         await repo.logout();
         state = const AuthState(status: AuthStatus.unauthenticated);
       } else if (cached == null) {
@@ -100,6 +107,8 @@ class AuthController extends StateNotifier<AuthState> {
       final session = await _ref
           .read(authRepositoryProvider)
           .login(username: username, password: password, remember: remember);
+      // Before the state change, so the screen it leads to is already theirs.
+      _identify(session.user);
       state = AuthState(status: AuthStatus.authenticated, user: session.user);
       return true;
     } on ApiException catch (e) {
@@ -112,6 +121,8 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // Not awaited: sign-out never waits for analytics.
+    Telemetry.signedOut();
     state = state.copyWith(isBusy: true);
     await _ref.read(authRepositoryProvider).logout();
     state = const AuthState(status: AuthStatus.unauthenticated);
@@ -150,6 +161,10 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   void clearError() => state = state.copyWith(clearError: true);
+
+  /// Usage analytics: who this is (id and role code only). Fire and forget.
+  void _identify(AuthUser user) =>
+      Telemetry.signedIn(userId: '${user.id}', role: user.role.code);
 }
 
 final authControllerProvider =

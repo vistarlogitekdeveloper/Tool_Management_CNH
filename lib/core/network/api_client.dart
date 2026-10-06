@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
 import '../storage/token_storage.dart';
+import '../telemetry/telemetry.dart';
 import 'api_exception.dart';
 
 /// Thin wrapper over Dio that owns three concerns the screens should never see:
@@ -23,6 +24,11 @@ class ApiClient {
       validateStatus: (status) => status != null && status < 500,
     );
     _dio.interceptors.add(_authInterceptor());
+    // Usage analytics: named actions and failed calls; changes nothing about a
+    // request (core/telemetry/telemetry.dart). After the auth interceptor: a
+    // request it replays after a token refresh goes through the whole chain
+    // again and is counted there, once.
+    if (Telemetry.enabled) _dio.interceptors.add(TelemetryInterceptor());
     if (AppConfig.isDebug) {
       _dio.interceptors.add(LogInterceptor(requestBody: false, responseBody: false, error: true));
     }
