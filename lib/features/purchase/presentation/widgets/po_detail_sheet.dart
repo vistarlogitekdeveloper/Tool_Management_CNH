@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/telemetry/telemetry.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/feedback.dart';
@@ -20,7 +21,8 @@ import '../../data/purchase_repository.dart';
 /// Full PO record: lines, receipt history and the actions available at its
 /// current status.
 Future<void> showPoDetail(BuildContext context, WidgetRef ref, int poId) =>
-    showDetailSheet<void>(context, _PoDetailSheet(poId: poId), width: 780);
+    showDetailSheet<void>(context, _PoDetailSheet(poId: poId), width: 780,
+        screen: Telemetry.purchaseOrderScreen);
 
 class _PoDetailSheet extends ConsumerWidget {
   const _PoDetailSheet({required this.poId});

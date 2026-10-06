@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/telemetry/telemetry.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/feedback.dart';
@@ -27,7 +28,8 @@ import 'tool_form_dialog.dart';
 /// The full record behind a tool: master data, live stock, calibration status,
 /// who is holding it, its attachments and its complete movement history.
 Future<void> showToolDetail(BuildContext context, WidgetRef ref, int toolId) =>
-    showDetailSheet<void>(context, _ToolDetailSheet(toolId: toolId));
+    showDetailSheet<void>(context, _ToolDetailSheet(toolId: toolId),
+        screen: Telemetry.toolDetailScreen);
 
 class _ToolDetailSheet extends ConsumerWidget {
   const _ToolDetailSheet({required this.toolId});

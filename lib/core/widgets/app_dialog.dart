@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../telemetry/telemetry.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
@@ -160,7 +161,18 @@ Future<T?> showAppDialog<T>(BuildContext context, Widget dialog, {bool dismissib
 }
 
 /// Right-side detail panel for a record; a full-screen route on a phone.
-Future<T?> showDetailSheet<T>(BuildContext context, Widget child, {double width = 720}) {
+///
+/// [screen] names it for usage analytics (a Telemetry screen name); it is
+/// reported while open, and the screen underneath again once it closes.
+Future<T?> showDetailSheet<T>(BuildContext context, Widget child, {double width = 720, String? screen}) {
+  if (screen != null && Telemetry.enabled) {
+    Telemetry.covering(screen);
+    return _showDetailSheet<T>(context, child, width).whenComplete(() => Telemetry.uncovered(screen));
+  }
+  return _showDetailSheet<T>(context, child, width);
+}
+
+Future<T?> _showDetailSheet<T>(BuildContext context, Widget child, double width) {
   if (context.isMobile) {
     return Navigator.of(context).push<T>(
       MaterialPageRoute(builder: (_) => child, fullscreenDialog: true),

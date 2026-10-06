@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/telemetry/telemetry.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
@@ -18,7 +19,8 @@ import '../../data/tracking_repository.dart';
 /// "Where is TL-1002 right now?" — the split between store, hands and vendor,
 /// with every holder named.
 Future<void> showLocateSheet(BuildContext context, WidgetRef ref, int toolId) =>
-    showDetailSheet<void>(context, _LocateSheet(toolId: toolId), width: 620);
+    showDetailSheet<void>(context, _LocateSheet(toolId: toolId), width: 620,
+        screen: Telemetry.locateToolScreen);
 
 class _LocateSheet extends ConsumerWidget {
   const _LocateSheet({required this.toolId});

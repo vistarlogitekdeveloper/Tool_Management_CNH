@@ -20,6 +20,7 @@ import '../../features/shell/presentation/app_shell.dart';
 import '../../features/tools/presentation/tool_master_screen.dart';
 import '../../features/tracking/presentation/tracking_screen.dart';
 import '../../models/enums.dart';
+import '../telemetry/telemetry.dart';
 import '../widgets/async_view.dart';
 
 /// Route paths, in one place so nothing navigates by a hand-typed string.
@@ -72,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _AuthRefresh(ref);
   ref.onDispose(refresh.dispose);
 
-  return GoRouter(
+  return _withScreenViews(ref, GoRouter(
     navigatorKey: _rootKey,
     initialLocation: Routes.dashboard,
     refreshListenable: refresh,
@@ -205,8 +206,41 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
     ),
-  );
+  ));
 });
+
+/// Reports each screen the router shows to usage analytics (by route
+/// pattern; see Telemetry.screen).
+GoRouter _withScreenViews(Ref ref, GoRouter router) {
+  if (!Telemetry.enabled) return router;
+  // The delegate, not the route-information provider: it also hears the
+  // location changes a redirect makes (sign-in landing on the dashboard).
+  void report() {
+    try {
+      // Until the saved session has been checked the router holds whatever
+      // was asked for; that is not a screen anyone chose yet.
+      if (!ref.read(authControllerProvider).isResolved) return;
+      final config = router.routerDelegate.currentConfiguration;
+      if (config.isEmpty) return; // not parsed yet; the next change reports
+      Telemetry.screen(config.uri.toString());
+    } catch (_) {
+      // No configuration yet; the next change reports.
+    }
+  }
+
+  router.routerDelegate.addListener(report);
+  ref.onDispose(() => router.routerDelegate.removeListener(report));
+  // A session check can end on the screen it started on, which the delegate
+  // does not announce again: report once it settles (after any redirect).
+  ref.listen<AuthState>(authControllerProvider, (previous, next) {
+    if (previous?.isResolved == false && next.isResolved) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => report());
+    }
+  });
+  // The listener only hears changes: report the starting screen too.
+  WidgetsBinding.instance.addPostFrameCallback((_) => report());
+  return router;
+}
 
 /// Cross-fade between shell pages — the prototype's `.screen` transition.
 CustomTransitionPage<void> _fade(GoRouterState state, Widget child) => CustomTransitionPage<void>(

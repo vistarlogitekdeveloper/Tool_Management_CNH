@@ -40,6 +40,13 @@ dependencies:
   # Used directly by the web download path (core/utils/downloader_web.dart)
   web: ^1.1.0
 
+  # Usage analytics: the in-house event tracker (Platform Console > Analytics >
+  # Event tracker). Vendored: the SDK repository is private, so the Cloudflare
+  # build cannot fetch it (packages/vistar_event_tracker/VENDORED.md). Off
+  # unless the build gets ET_APP_ID + ET_WRITE_KEY (lib/core/telemetry/).
+  vistar_event_tracker:
+    path: packages/vistar_event_tracker
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

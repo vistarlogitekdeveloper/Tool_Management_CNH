@@ -147,6 +147,43 @@ the browser revalidates and takes a 304 when nothing changed.
 The backend must allow the Worker's origin through CORS. Because `API_BASE_URL`
 is compiled into the web bundle, changing it requires another deployment.
 
+## Usage analytics (event tracker)
+
+`lib/core/telemetry/telemetry.dart`, using the in-house `vistar_event_tracker`
+SDK (vendored in `packages/`, see its `VENDORED.md`). Read in the Platform
+Console under Analytics > Event tracker.
+
+**Off unless the build gets both `ET_APP_ID` and `ET_WRITE_KEY`**; without them
+nothing is initialised and the app behaves exactly as before. To switch it on:
+
+1. Register `tms_app` in the Platform Console, Settings > Event tracker, and
+   copy its write key.
+2. Web (the live site is built by Cloudflare Workers Builds, project
+   `tool-management-cnh`, through `wrangler deploy` -> `[build]` ->
+   `scripts/cloudflare-build.sh`): add `ET_APP_ID=tms_app` and `ET_WRITE_KEY`
+   (as a secret) under Workers > tool-management-cnh > Settings > Build >
+   Variables and secrets, pasted with no leading space or newline, then
+   redeploy. The script passes the two defines only when both are set.
+3. GitHub Actions route (not publishing today): set the repository variable
+   `ET_APP_ID` and the secret `ET_WRITE_KEY`; the workflow passes them only
+   when both are set.
+4. APK: `flutter build apk --release --dart-define=ET_APP_ID=tms_app --dart-define=ET_WRITE_KEY=wk_...`
+
+Events go to the host of `API_BASE_URL` (a UAT build reports to UAT);
+`ET_BASE_URL` overrides it.
+
+Sent: screen views by route pattern (`/tools`, `/reports/calibration`; filters
+and ids dropped) and the detail panels over them (`/tools/:id`,
+`/purchase/:id`, `/tracking/locate/:id`); sign-in / sign-out (the user as
+`tms:<id>` with their role code); named actions from successful writes
+(`tool_issued`, `tool_returned`, `calibration_recorded`,
+`purchase_order_received`, ... see `_actions`); failed API calls (5xx / no
+connection) and client errors by type. Never sent: request or response
+bodies, tool codes or serial numbers, employee names or codes, usernames,
+emails, phone numbers, vendor names, quantities, amounts or remarks. Nothing
+is awaited by a screen, an issue or return, a sign-in or a sign-out; start-up
+waits at most 2 s; the event queue is capped at 200.
+
 ## Tests
 
 ```bash
